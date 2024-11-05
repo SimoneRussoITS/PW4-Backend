@@ -30,6 +30,17 @@ public class Prodotto {
     @Column(name = "Foto", nullable = false)
     private String foto;
 
+    public static Prodotto create(String nome, String descrizione, String ingredienti, Integer quantita, BigDecimal prezzo, String foto) {
+        Prodotto prodotto = new Prodotto();
+        prodotto.setNome(nome);
+        prodotto.setDescrizione(descrizione);
+        prodotto.setIngredienti(ingredienti);
+        prodotto.setQuantita(quantita);
+        prodotto.setPrezzo(prezzo);
+        prodotto.setFoto(foto);
+        return prodotto;
+    }
+
     public String getFoto() {
         return foto;
     }

@@ -4,8 +4,10 @@ import itsincom.webdev2425.persistence.model.Utente;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.transaction.Transactional;
 
 @ApplicationScoped
+@Transactional
 public class UtenteRepository implements PanacheRepository<Utente> {
 
 

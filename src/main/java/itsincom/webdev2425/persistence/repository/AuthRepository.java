@@ -10,6 +10,7 @@ import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @ApplicationScoped
+@Transactional
 public class AuthRepository implements PanacheRepository<Utente> {
     private final ReactiveMailer reactiveMailer;
 
@@ -27,7 +28,6 @@ public class AuthRepository implements PanacheRepository<Utente> {
     }
 
     // register
-    @Transactional
     public void register(String nome, String cognome, String email, String telefono, String password) {
         // controllo se la mail o il telefono sono già presenti nel db
         if (find("email", email).count() > 0 && !email.isBlank()) {
@@ -53,7 +53,6 @@ public class AuthRepository implements PanacheRepository<Utente> {
     }
 
     // login
-    @Transactional
     public void login(String email, String telefono, String password) {
         // controllo se l'utente è presente a seconda se ha inserito la mail o il telefono o entrambi
         Utente utente = find("email = ?1 or telefono = ?2", email, telefono).firstResult();
@@ -66,7 +65,6 @@ public class AuthRepository implements PanacheRepository<Utente> {
     }
 
     // verifica della mail o del telefono tramite invio di una mail o di un sms
-    @Transactional
     public void inviaNotifica(String email, String telefono) {
         // invio della mail o dell'sms
         if (!email.isBlank()) {
@@ -94,7 +92,6 @@ public class AuthRepository implements PanacheRepository<Utente> {
     }
 
     // aggiornamento del ruolo dell'utente dopo la verifica
-    @Transactional
     public void aggiornaRuolo(String email) {
         // controllo se l'utente è presente
         Utente utente = find("email", email).firstResult();

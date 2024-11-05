@@ -24,7 +24,7 @@ public class AuthResource {
     public Response register(Utente utente) {
         authRepository.register(utente.getNome(), utente.getCognome(), utente.getEmail(), utente.getTelefono(), utente.getPassword());
         authRepository.inviaNotifica(utente.getEmail(), utente.getTelefono());
-        return Response.status(Response.Status.CREATED).entity("Utente registrato, controlla la tua casella di posta per verificare l'account e continuare con la login.").build();
+        return Response.status(Response.Status.CREATED).entity("Utente registrato, controlla la tua casella di posta per verificare l'account e continuare con il login.").build();
 
     }
 
