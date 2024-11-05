@@ -1,6 +1,5 @@
 package itsincom.webdev2425.persistence.repository;
 
-import com.twilio.rest.verify.v2.service.Verification;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.reactive.ReactiveMailer;
@@ -8,17 +7,7 @@ import io.smallrye.mutiny.Uni;
 import itsincom.webdev2425.persistence.model.Utente;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-
-import com.twilio.Twilio;
-import com.twilio.rest.api.v2010.account.Message;
-import com.twilio.type.PhoneNumber;
-
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 @ApplicationScoped
 public class AuthRepository implements PanacheRepository<Utente> {
@@ -41,10 +30,10 @@ public class AuthRepository implements PanacheRepository<Utente> {
     @Transactional
     public void register(String nome, String cognome, String email, String telefono, String password) {
         // controllo se la mail o il telefono sono già presenti nel db
-        if (find("email", email).count() > 0) {
+        if (find("email", email).count() > 0 && !email.isBlank()) {
             throw new RuntimeException("Email già presente");
         }
-        if (find("telefono", telefono).count() > 0) {
+        if (find("telefono", telefono).count() > 0 && !telefono.isBlank()) {
             throw new RuntimeException("Telefono già presente");
         }
         // l'utente può registrarsi o con la mail o con il telefono o con entrambi
@@ -65,7 +54,7 @@ public class AuthRepository implements PanacheRepository<Utente> {
 
     // login
     @Transactional
-    public Utente login(String email, String telefono, String password) {
+    public void login(String email, String telefono, String password) {
         // controllo se l'utente è presente a seconda se ha inserito la mail o il telefono o entrambi
         Utente utente = find("email = ?1 or telefono = ?2", email, telefono).firstResult();
         if (utente == null) {
@@ -74,13 +63,11 @@ public class AuthRepository implements PanacheRepository<Utente> {
         if (!utente.getPassword().equals(String.valueOf(password.hashCode()))) {
             throw new RuntimeException("Password errata");
         }
-        // se l'utente è presente e la password è corretta ritorno l'utente
-        return utente;
     }
 
     // verifica della mail o del telefono tramite invio di una mail o di un sms
     @Transactional
-    public void verifica(String email, String telefono) {
+    public void inviaNotifica(String email, String telefono) {
         // invio della mail o dell'sms
         if (!email.isBlank()) {
             // invio della mail con sendgrid
