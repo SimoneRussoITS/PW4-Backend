@@ -83,4 +83,16 @@ public class Utente {
     public void setId(Integer id) {
         this.id = id;
     }
+
+    public static Utente create(String nome, String cognome, String email, String telefono, String password) {
+        String hash = String.valueOf(password.hashCode());
+        Utente utente = new Utente();
+        utente.setNome(nome);
+        utente.setCognome(cognome);
+        utente.setEmail(email);
+        utente.setTelefono(telefono);
+        utente.setPassword(hash);
+        utente.setRuolo("CLIENTE NON VERIFICATO");
+        return utente;
+    }
 }
