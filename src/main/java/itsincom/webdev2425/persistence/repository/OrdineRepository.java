@@ -17,7 +17,8 @@ public class OrdineRepository implements PanacheMongoRepository<Ordine> {
     public void addOrdine(String email_utente, List<DettaglioProdotto> dettaglio, Date data_ritiro) {
         List<Ordine> ordini = getOrdini();
         for (Ordine o : ordini) {
-            if (o.getData_ritiro().getTime() - data_ritiro.getTime() < 600000) {
+            long diff = data_ritiro.getTime() - o.getData_ritiro().getTime();
+            if (diff < 600000) {
                 throw new RuntimeException("Devono passare almeno 10 minuti tra un ordine e l'altro");
             }
         }

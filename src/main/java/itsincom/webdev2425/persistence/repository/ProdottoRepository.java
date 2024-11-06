@@ -19,6 +19,11 @@ public class ProdottoRepository implements PanacheRepository<Prodotto> {
         }
     }
 
+    public Prodotto findByName(String nome) {
+        Prodotto prodotto = find("nome", nome).firstResult();
+        return prodotto;
+    }
+
     public Prodotto getById(String id) {
         Long idLong = Long.parseLong(id);
         return findById(idLong);
