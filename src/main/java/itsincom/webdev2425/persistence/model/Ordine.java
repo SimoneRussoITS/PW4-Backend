@@ -9,10 +9,14 @@ import java.util.List;
 public class Ordine {
     private ObjectId id;
     private List<DettaglioProdotto> dettaglio;
-    private ObjectId id_utente;
+    private String email_utente;
     private String stato;
     private String data;
     private String data_ritiro;
+
+    public static Ordine create(String email_utente, List<DettaglioProdotto> dettaglio, String dataRitiro) {
+        return null;
+    }
 
     public ObjectId getId() {
         return id;
@@ -30,12 +34,12 @@ public class Ordine {
         this.dettaglio = dettaglio;
     }
 
-    public ObjectId getId_utente() {
-        return id_utente;
+    public String getEmail_utente() {
+        return email_utente;
     }
 
-    public void setId_utente(ObjectId id_utente) {
-        this.id_utente = id_utente;
+    public void setEmail_utente(String email_utente) {
+        this.email_utente = email_utente;
     }
 
     public String getStato() {

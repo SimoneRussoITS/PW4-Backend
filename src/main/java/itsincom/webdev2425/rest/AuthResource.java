@@ -5,6 +5,7 @@ import itsincom.webdev2425.persistence.repository.AuthRepository;
 import itsincom.webdev2425.persistence.repository.UtenteRepository;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 
 @Path("/auth")
@@ -39,7 +40,14 @@ public class AuthResource {
             return Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato, verifica la tua email prima di accedere. Ti abbiamo inviato una mail con il link di conferma.").build();
         } else {
             authRepository.login(utente.getEmail(), utente.getTelefono(), utente.getPassword());
-            return Response.status(Response.Status.OK).entity("Accesso effettuato").build();
+            NewCookie sessionCookie = new NewCookie.Builder("SESSION_COOKIE")
+                    .path("/")
+                    .value(String.valueOf(u.getId()))
+                    .build();
+            return Response.ok()
+                    .cookie(sessionCookie)
+                    .entity("Accesso effettuato con successo.")
+                    .build();
         }
 
     }
@@ -50,6 +58,21 @@ public class AuthResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public void verifica(@PathParam("email") String email) {
         authRepository.aggiornaRuolo(email);
+    }
+
+    // logout
+    @DELETE
+    @Path("/logout")
+    public Response logout(@CookieParam("SESSION_COOKIE") int sessionId) {
+        // cancella il cookie
+        NewCookie sessionCookie = new NewCookie.Builder("SESSION_COOKIE")
+                .path("/")
+                .maxAge(0)
+                .build();
+        return Response.ok()
+                .cookie(sessionCookie)
+                .entity("Logout effettuato con successo.")
+                .build();
     }
 
 }
