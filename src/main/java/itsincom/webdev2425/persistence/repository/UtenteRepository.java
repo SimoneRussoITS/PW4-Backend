@@ -18,6 +18,7 @@ public class UtenteRepository implements PanacheRepository<Utente> {
 
     public Utente findById(String id) {
         Long idLong = Long.parseLong(id);
-        return findById(idLong);
+        Utente utente = findById(idLong);
+        return utente;
     }
 }

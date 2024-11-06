@@ -64,15 +64,19 @@ public class AuthResource {
     @DELETE
     @Path("/logout")
     public Response logout(@CookieParam("SESSION_COOKIE") int sessionId) {
-        // cancella il cookie
-        NewCookie sessionCookie = new NewCookie.Builder("SESSION_COOKIE")
-                .path("/")
-                .maxAge(0)
-                .build();
-        return Response.ok()
-                .cookie(sessionCookie)
-                .entity("Logout effettuato con successo.")
-                .build();
+        // cancella il cookie se esiste
+        if (sessionId > 0) {
+            NewCookie sessionCookie = new NewCookie.Builder("SESSION_COOKIE")
+                    .path("/")
+                    .maxAge(0)
+                    .build();
+            return Response.ok()
+                    .cookie(sessionCookie)
+                    .entity("Logout effettuato con successo.")
+                    .build();
+        } else {
+            return Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato, effettua il login per poter effettuare il logout.").build();
+        }
     }
 
 }

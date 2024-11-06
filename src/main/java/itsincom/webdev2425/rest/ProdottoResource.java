@@ -22,7 +22,11 @@ public class ProdottoResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Prodotto> getProdotti(@QueryParam("search") String search) {
+    public List<Prodotto> getProdotti(@QueryParam("search") String search, @CookieParam("SESSION_COOKIE") @DefaultValue("-1") int sessionId) {
+        Utente utente = utenteRepository.findById(String.valueOf(sessionId));
+        if (utente == null || !utente.getRuolo().equals("ADMIN") && !utente.getRuolo().equals("CLIENTE VERIFICATO")) {
+            throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato").build());
+        }
         return prodottoRepository.getAll(search);
     }
 
