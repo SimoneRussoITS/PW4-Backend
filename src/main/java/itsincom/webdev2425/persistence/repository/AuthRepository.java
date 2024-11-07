@@ -71,7 +71,7 @@ public class AuthRepository implements PanacheRepository<Utente> {
             // invio della mail con sendgrid
             Mail mail = Mail.withHtml(email,
                     "Verifica email",
-                    "Clicca <a href='http://localhost:8080/auth/verifica/" + email + "'>qui</a> per verificare la tua email"
+                    "Clicca <a href='http://localhost:3000/VerificaMail?email=" + email + "'>qui</a> per verificare la tua email"
             );
             Uni<Void> send = reactiveMailer.send(mail);
             send.subscribe().with(

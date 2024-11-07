@@ -62,4 +62,54 @@ public class OrdineResource {
                     .build();
         }
     }
+
+    @GET
+    @Path("/utente")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<Ordine> getOrdiniUtente(@CookieParam("SESSION_COOKIE") @DefaultValue("-1") int sessionId) {
+        Utente utente = utenteRepository.findById(String.valueOf(sessionId));
+        if (utente == null || !utente.getRuolo().equals("CLIENTE VERIFICATO")) {
+            throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato").build());
+        } else {
+            return ordineRepository.getOrdiniUtente(utente.getEmail());
+        }
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<Ordine> getOrdini(@CookieParam("SESSION_COOKIE") @DefaultValue("-1") int sessionId) {
+        Utente utente = utenteRepository.findById(String.valueOf(sessionId));
+        if (utente == null || !utente.getRuolo().equals("ADMIN")) {
+            throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato").build());
+        } else {
+            return ordineRepository.getOrdini();
+        }
+    }
+
+    @PUT
+    @Path("/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response updateOrdine(@PathParam("id") String id, Ordine ordine, @CookieParam("SESSION_COOKIE") @DefaultValue("-1") int sessionId) {
+        Utente utente = utenteRepository.findById(String.valueOf(sessionId));
+        if (utente == null || !utente.getRuolo().equals("ADMIN")) {
+            return Response
+                    .status(Response.Status.UNAUTHORIZED)
+                    .entity("Accesso negato")
+                    .build();
+        } else {
+            Ordine ordineAggiornato = ordineRepository.update(ordine, id);
+            // TODO: invio una notifica all'utente con data e ora di ritiro dell'ordine per ricordarglielo
+            if (ordineAggiornato == null) {
+                return Response
+                        .status(Response.Status.NOT_FOUND)
+                        .entity("Errore durante l'aggiornamento dell'ordine")
+                        .build();
+            } else {
+                return Response
+                        .status(Response.Status.OK)
+                        .entity("Ordine aggiornato con successo")
+                        .build();
+            }
+        }
+    }
 }
