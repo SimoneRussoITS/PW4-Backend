@@ -30,6 +30,17 @@ public class ProdottoResource {
         return prodottoRepository.getAll(search);
     }
 
+    @GET
+    @Path("/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Prodotto getProdotto(@PathParam("id") String id, @CookieParam("SESSION_COOKIE") @DefaultValue("-1") int sessionId) {
+        Utente utente = utenteRepository.findById(String.valueOf(sessionId));
+        if (utente == null || !utente.getRuolo().equals("ADMIN") && !utente.getRuolo().equals("CLIENTE VERIFICATO")) {
+            throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato").build());
+        }
+        return prodottoRepository.getById(id);
+    }
+
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response addProdotto(Prodotto prodotto, @CookieParam("SESSION_COOKIE") @DefaultValue("-1") int sessionId) {
