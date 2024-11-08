@@ -63,10 +63,10 @@ public class AuthRepository implements PanacheRepository<Utente> {
         // controllo se l'utente è presente a seconda se ha inserito la mail o il telefono o entrambi
         Utente utente = find("email = ?1 or telefono = ?2", email, telefono).firstResult();
         if (utente == null) {
-            throw new RuntimeException("Utente non trovato");
+            throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity("Utente non trovato").build());
         }
         if (!utente.getPassword().equals(String.valueOf(password.hashCode()))) {
-            throw new RuntimeException("Password errata");
+            throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity("Password errata").build());
         }
     }
 
