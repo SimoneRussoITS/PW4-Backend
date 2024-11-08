@@ -38,10 +38,6 @@ public class OrdineRepository implements PanacheMongoRepository<Ordine> {
 
     public Ordine update(Ordine ordine, String id) {
         Ordine ordineDaAggiornare = getById(id);
-        ordineDaAggiornare.setEmail_utente(ordine.getEmail_utente());
-        ordineDaAggiornare.setDettaglio(ordine.getDettaglio());
-        ordineDaAggiornare.setData_ritiro(ordine.getData_ritiro());
-        ordineDaAggiornare.setPrezzoTotale(ordine.getPrezzoTotale());
         ordineDaAggiornare.setStato(ordine.getStato());
         update(ordineDaAggiornare);
         return ordineDaAggiornare;
