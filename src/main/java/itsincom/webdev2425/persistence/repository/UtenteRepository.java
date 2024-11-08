@@ -11,7 +11,6 @@ import jakarta.transaction.Transactional;
 @Transactional
 public class UtenteRepository implements PanacheRepository<Utente> {
     public Utente findByEmail(String email) {
-        // salvare tutti i campi dell'utente compreso l'id
         Utente utente = find("email", email).firstResult();
         return utente;
     }
@@ -19,6 +18,11 @@ public class UtenteRepository implements PanacheRepository<Utente> {
     public Utente findById(String id) {
         Long idLong = Long.parseLong(id);
         Utente utente = findById(idLong);
+        return utente;
+    }
+
+    public Utente findByEmailOrPhone(String email, String telefono) {
+        Utente utente = find("email = ?1 or telefono = ?2", email, telefono).firstResult();
         return utente;
     }
 }

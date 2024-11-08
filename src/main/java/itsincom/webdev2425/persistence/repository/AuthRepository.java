@@ -1,5 +1,8 @@
 package itsincom.webdev2425.persistence.repository;
 
+import com.twilio.Twilio;
+import com.twilio.rest.verify.v2.service.Verification;
+import com.twilio.rest.verify.v2.service.VerificationCheck;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.reactive.ReactiveMailer;
@@ -7,6 +10,8 @@ import io.smallrye.mutiny.Uni;
 import itsincom.webdev2425.persistence.model.Utente;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @ApplicationScoped
@@ -29,22 +34,23 @@ public class AuthRepository implements PanacheRepository<Utente> {
 
     // register
     public void register(String nome, String cognome, String email, String telefono, String password) {
+        telefono = "+39" + telefono;
         // controllo se la mail o il telefono sono già presenti nel db
         if (find("email", email).count() > 0 && !email.isBlank()) {
-            throw new RuntimeException("Email già presente");
+            throw new WebApplicationException(Response.status(Response.Status.CONFLICT).entity("Email già presente").build());
         }
         if (find("telefono", telefono).count() > 0 && !telefono.isBlank()) {
-            throw new RuntimeException("Telefono già presente");
+            throw new WebApplicationException(Response.status(Response.Status.CONFLICT).entity("Telefono già presente").build());
         }
         // l'utente può registrarsi o con la mail o con il telefono o con entrambi
         if (email == null || email.isBlank()) {
             email = "";
         }
-        if (telefono == null || telefono.isBlank()) {
+        if (telefono.equals("+39")) {
             telefono = "";
         }
         if (email.isBlank() && telefono.isBlank()) {
-            throw new RuntimeException("Inserire almeno un contatto");
+            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Inserire almeno un contatto").build());
         }
         // creo l'utente
         Utente utente = Utente.create(nome, cognome, email, telefono, password);
@@ -64,9 +70,9 @@ public class AuthRepository implements PanacheRepository<Utente> {
         }
     }
 
-    // verifica della mail o del telefono tramite invio di una mail o di un sms
-    public void inviaNotifica(String email, String telefono) {
-        // invio della mail o dell'sms
+    // invio della mail
+    public void inviaMail(String email) {
+        // invio della mail
         if (!email.isBlank()) {
             // invio della mail con sendgrid
             Mail mail = Mail.withHtml(email,
@@ -78,18 +84,41 @@ public class AuthRepository implements PanacheRepository<Utente> {
                     success -> System.out.println("Mail inviata"),
                     failure -> System.out.println("Errore nell'invio della mail")
             );
+        } else {
+            throw new RuntimeException("Email non presente");
         }
-//        if (!telefono.isBlank()) {
-//            // invio del sms con twilio
-//            Twilio.init(twilioAccountSid, twilioAuthToken);
-//            Verification verification = Verification.creator(
-//                            "VAe40230670751d93c15ddbe73884cb46b",
-//                            telefono,
-//                            "sms")
-//                    .create();
-//            verification.getSid();
-//        }
     }
+
+    // invio del messaggio di verifica tramite telefono
+    public void inviaMessaggio(String telefono) {
+        // invio del messaggio di verifica tramite twilio
+        if (!telefono.isBlank()) {
+            Twilio.init(twilioAccountSid, twilioAuthToken);
+            Verification verification = Verification.creator(
+                    "VAe40230670751d93c15ddbe73884cb46b",
+                    "+39" + telefono,
+                    "sms"
+            ).create();
+            System.out.println(verification.getStatus());
+        } else {
+            throw new RuntimeException("Telefono non presente");
+        }
+    }
+
+    // controllo del codice di verifica
+    public Response verificaCodice(String telefono, String codice) {
+        Twilio.init(twilioAccountSid, twilioAuthToken);
+        VerificationCheck verificationCheck = VerificationCheck.creator("VAe40230670751d93c15ddbe73884cb46b")
+                .setTo(telefono)
+                .setCode(codice)
+                .create();
+        if (verificationCheck.getStatus().equals("approved")) {
+            return Response.ok().entity("Codice verificato").build();
+        } else {
+            return Response.status(Response.Status.UNAUTHORIZED).entity("Codice non verificato").build();
+        }
+    }
+
 
     // aggiornamento del ruolo dell'utente dopo la verifica
     public void aggiornaRuolo(String email) {
@@ -103,3 +132,5 @@ public class AuthRepository implements PanacheRepository<Utente> {
         update("ruolo = ?1 where email = ?2", utente.getRuolo(), email);
     }
 }
+
+

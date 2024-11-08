@@ -24,9 +24,20 @@ public class AuthResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response register(Utente utente) {
         authRepository.register(utente.getNome(), utente.getCognome(), utente.getEmail(), utente.getTelefono(), utente.getPassword());
-        authRepository.inviaNotifica(utente.getEmail(), utente.getTelefono());
-        return Response.status(Response.Status.CREATED).entity("Utente registrato, controlla la tua casella di posta per verificare l'account e continuare con il login.").build();
-
+        String mail = utente.getEmail();
+        String telefono = utente.getTelefono();
+        if (!mail.isBlank() && !telefono.isBlank()) {
+            authRepository.inviaMail(utente.getEmail());
+            return Response.status(Response.Status.CREATED).entity("Utente registrato con successo. Verifica la tua email prima di accedere. Ti abbiamo inviato una mail con il link di conferma.").build();
+        } else {
+            if (!mail.isBlank()) {
+                authRepository.inviaMail(utente.getEmail());
+                return Response.status(Response.Status.CREATED).entity("Utente registrato con successo. Verifica la tua email prima di accedere. Ti abbiamo inviato una mail con il link di conferma.").build();
+            } else {
+                authRepository.inviaMessaggio(utente.getTelefono());
+                return Response.status(Response.Status.CREATED).entity("Utente registrato con successo. Verifica il tuo telefono prima di accedere. Ti abbiamo inviato un messaggio con il codice di conferma.").build();
+            }
+        }
     }
 
     // login
@@ -34,10 +45,22 @@ public class AuthResource {
     @Path("/login")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response login(Utente utente) {
-        Utente u = utenteRepository.findByEmail(utente.getEmail());
+        Utente u = utenteRepository.findByEmailOrPhone(utente.getEmail(), utente.getTelefono());
+        String mail = u.getEmail();
+        String telefono = u.getTelefono();
         if (u.getRuolo().equals("CLIENTE NON VERIFICATO")) {
-            authRepository.inviaNotifica(u.getEmail(), u.getTelefono());
-            return Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato, verifica la tua email prima di accedere. Ti abbiamo inviato una mail con il link di conferma.").build();
+            if (!mail.isBlank() && !telefono.isBlank()) {
+                authRepository.inviaMail(u.getEmail());
+                return Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato, verifica la tua email e il tuo telefono prima di accedere. Ti abbiamo inviato una mail con il link di conferma.").build();
+            } else {
+                if (!mail.isBlank()) {
+                    authRepository.inviaMail(u.getEmail());
+
+                } else {
+                    authRepository.inviaMessaggio(u.getTelefono());
+                }
+                return Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato, verifica la tua email prima di accedere. Ti abbiamo inviato una mail con il link di conferma.").build();
+            }
         } else {
             authRepository.login(utente.getEmail(), utente.getTelefono(), utente.getPassword());
             NewCookie sessionCookie = new NewCookie.Builder("SESSION_COOKIE")
@@ -49,15 +72,30 @@ public class AuthResource {
                     .entity("Accesso effettuato con successo.")
                     .build();
         }
-
     }
 
-    // verifica utente
+    // verifica utente tramite mail
     @POST
     @Path("/verifica/{email}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public void verifica(@PathParam("email") String email) {
+    public void verificaByEmail(@PathParam("email") String email) {
         authRepository.aggiornaRuolo(email);
+    }
+
+    // verifica utente tramite telefono
+    @POST
+    @Path("/verifica/{telefono}/{codice}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response verificaByPhone(@PathParam("codice") String codice, @PathParam("telefono") String telefono) {
+        Response response = authRepository.verificaCodice(telefono, codice);
+        if (response.getStatus() == 200) {
+            Utente u = utenteRepository.findByEmailOrPhone("", telefono);
+            authRepository.aggiornaRuolo(u.getEmail());
+            return Response.ok().entity("Utente verificato con successo.").build();
+        } else {
+            return Response.status(Response.Status.UNAUTHORIZED).entity("Codice non verificato.").build();
+        }
+
     }
 
     // logout
