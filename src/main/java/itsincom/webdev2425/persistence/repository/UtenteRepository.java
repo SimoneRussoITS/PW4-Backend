@@ -7,6 +7,8 @@ import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 
+import java.util.List;
+
 @ApplicationScoped
 @Transactional
 public class UtenteRepository implements PanacheRepository<Utente> {
@@ -24,5 +26,9 @@ public class UtenteRepository implements PanacheRepository<Utente> {
     public Utente findByEmailOrPhone(String email, String telefono) {
         Utente utente = find("email = ?1 or telefono = ?2", email, telefono).firstResult();
         return utente;
+    }
+
+    public List<Utente> getAllUtenti() {
+        return listAll();
     }
 }

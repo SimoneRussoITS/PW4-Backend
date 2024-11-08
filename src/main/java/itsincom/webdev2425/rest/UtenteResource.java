@@ -6,6 +6,8 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import java.util.List;
+
 @Path("/utente")
 public class UtenteResource {
     private final UtenteRepository utenteRepository;
@@ -13,6 +15,14 @@ public class UtenteResource {
     public UtenteResource(UtenteRepository utenteRepository) {
         this.utenteRepository = utenteRepository;
     }
+
+    @GET
+    @Path("/all")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<Utente> getUtenti() {
+        return utenteRepository.getAllUtenti();
+    }
+
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
