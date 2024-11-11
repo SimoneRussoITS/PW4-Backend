@@ -3,6 +3,7 @@ package itsincom.webdev2425.persistence.model;
 import io.quarkus.mongodb.panache.common.MongoEntity;
 import org.bson.types.ObjectId;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -12,18 +13,20 @@ public class Ordine {
     private List<DettaglioProdotto> dettaglio;
     private String email_utente;
     private String stato;
-    private Date data;
-    private Date data_ritiro;
+    private LocalDateTime data;
+    private LocalDateTime data_ritiro;
     private double prezzoTotale;
+    private List<String> commenti;
 
-    public static Ordine create(String email_utente, List<DettaglioProdotto> dettaglio, Date dataRitiro) {
+    public static Ordine create(String email_utente, List<DettaglioProdotto> dettaglio, LocalDateTime dataRitiro) {
         Ordine ordine = new Ordine();
         ordine.setEmail_utente(email_utente);
         ordine.setDettaglio(dettaglio);
-        ordine.setData(new Date());
+        ordine.setData(LocalDateTime.now());
         ordine.setData_ritiro(dataRitiro);
         ordine.setPrezzoTotale(calculatePrezzoTotale(dettaglio));
         ordine.setStato("IN ATTESA DI CONFERMA");
+        ordine.setCommenti(List.of());
         return ordine;
     }
 
@@ -59,19 +62,19 @@ public class Ordine {
         this.stato = stato;
     }
 
-    public Date getData() {
+    public LocalDateTime getData() {
         return data;
     }
 
-    public void setData(Date data) {
+    public void setData(LocalDateTime data) {
         this.data = data;
     }
 
-    public Date getData_ritiro() {
+    public LocalDateTime getData_ritiro() {
         return data_ritiro;
     }
 
-    public void setData_ritiro(Date data_ritiro) {
+    public void setData_ritiro(LocalDateTime data_ritiro) {
         this.data_ritiro = data_ritiro;
     }
 
@@ -81,6 +84,14 @@ public class Ordine {
 
     public void setPrezzoTotale(double prezzoTotale) {
         this.prezzoTotale = prezzoTotale;
+    }
+
+    public List<String> getCommenti() {
+        return commenti;
+    }
+
+    public void setCommenti(List<String> commenti) {
+        this.commenti = commenti;
     }
 
     private static double calculatePrezzoTotale(List<DettaglioProdotto> dettaglio) {

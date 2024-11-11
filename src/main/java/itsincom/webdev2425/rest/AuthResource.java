@@ -75,7 +75,7 @@ public class AuthResource {
                 }
                 return Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato, verifica la tua email prima di accedere. Ti abbiamo inviato una mail con il link di conferma.").build();
             } else {
-                authRepository.login(u.getEmail(), u.getTelefono(), utente.getPassword());
+                authRepository.login(utente.getEmail(), utente.getTelefono(), utente.getPassword());
                 NewCookie sessionCookie = new NewCookie.Builder("SESSION_COOKIE")
                         .path("/")
                         .value(String.valueOf(u.getId()))
