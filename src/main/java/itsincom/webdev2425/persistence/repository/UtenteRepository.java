@@ -17,14 +17,14 @@ public class UtenteRepository implements PanacheRepository<Utente> {
         return utente;
     }
 
-    public Utente findById(String id) {
-        Long idLong = Long.parseLong(id);
-        Utente utente = findById(idLong);
+    public Utente findByPhone(String telefono) {
+        Utente utente = find("telefono", "+39" + telefono).firstResult();
         return utente;
     }
 
-    public Utente findByEmailOrPhone(String email, String telefono) {
-        Utente utente = find("email = ?1 or telefono = ?2", email, telefono).firstResult();
+    public Utente findById(String id) {
+        Long idLong = Long.parseLong(id);
+        Utente utente = findById(idLong);
         return utente;
     }
 

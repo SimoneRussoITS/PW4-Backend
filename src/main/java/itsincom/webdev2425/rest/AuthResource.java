@@ -23,18 +23,20 @@ public class AuthResource {
     @Path("/register")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response register(Utente utente) {
-        authRepository.register(utente.getNome(), utente.getCognome(), utente.getEmail(), utente.getTelefono(), utente.getPassword());
         String mail = utente.getEmail();
         String telefono = utente.getTelefono();
         if (!mail.isBlank() && !telefono.isBlank()) {
             authRepository.inviaMail(utente.getEmail());
+            authRepository.register(utente.getNome(), utente.getCognome(), utente.getEmail(), utente.getTelefono(), utente.getPassword());
             return Response.status(Response.Status.CREATED).entity("Utente registrato con successo. Verifica la tua email prima di accedere. Ti abbiamo inviato una mail con il link di conferma.").build();
         } else {
             if (!mail.isBlank()) {
                 authRepository.inviaMail(utente.getEmail());
+                authRepository.register(utente.getNome(), utente.getCognome(), utente.getEmail(), utente.getTelefono(), utente.getPassword());
                 return Response.status(Response.Status.CREATED).entity("Utente registrato con successo. Verifica la tua email prima di accedere. Ti abbiamo inviato una mail con il link di conferma.").build();
             } else {
                 authRepository.inviaMessaggio(utente.getTelefono());
+                authRepository.register(utente.getNome(), utente.getCognome(), utente.getEmail(), utente.getTelefono(), utente.getPassword());
                 return Response.status(Response.Status.CREATED).entity("Utente registrato con successo. Verifica il tuo telefono prima di accedere. Ti abbiamo inviato un messaggio con il codice di conferma.").build();
             }
         }
@@ -45,32 +47,44 @@ public class AuthResource {
     @Path("/login")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response login(Utente utente) {
-        Utente u = utenteRepository.findByEmailOrPhone(utente.getEmail(), utente.getTelefono());
-        String mail = u.getEmail();
-        String telefono = u.getTelefono();
-        if (u.getRuolo().equals("CLIENTE NON VERIFICATO")) {
-            if (!mail.isBlank() && !telefono.isBlank()) {
-                authRepository.inviaMail(u.getEmail());
-                return Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato, verifica la tua email e il tuo telefono prima di accedere. Ti abbiamo inviato una mail con il link di conferma.").build();
+        if (utente.getEmail() == null && utente.getTelefono() == null) {
+            return Response.status(Response.Status.UNAUTHORIZED).entity("Inserire almeno un contatto.").build();
+        } else {
+            if (utente.getPassword().isBlank()) {
+                return Response.status(Response.Status.UNAUTHORIZED).entity("Inserire la password.").build();
+            }
+            Utente u;
+            if (utente.getEmail() != null) {
+                u = utenteRepository.findByEmail(utente.getEmail());
             } else {
-                if (!mail.isBlank()) {
-                    authRepository.inviaMail(u.getEmail());
-
+                u = utenteRepository.findByPhone(utente.getTelefono());
+            }
+            if (u == null) {
+                return Response.status(Response.Status.UNAUTHORIZED).entity("Utente non trovato.").build();
+            }
+            if (u.getRuolo().equals("CLIENTE NON VERIFICATO")) {
+                if (!u.getEmail().isBlank() && !u.getTelefono().isBlank()) {
+                    authRepository.inviaMail(utente.getEmail());
                 } else {
-                    authRepository.inviaMessaggio(u.getTelefono());
+                    if (!u.getEmail().isBlank()) {
+                        authRepository.inviaMail(utente.getEmail());
+
+                    } else {
+                        authRepository.inviaMessaggio(utente.getTelefono());
+                    }
                 }
                 return Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato, verifica la tua email prima di accedere. Ti abbiamo inviato una mail con il link di conferma.").build();
+            } else {
+                authRepository.login(u.getEmail(), u.getTelefono(), utente.getPassword());
+                NewCookie sessionCookie = new NewCookie.Builder("SESSION_COOKIE")
+                        .path("/")
+                        .value(String.valueOf(u.getId()))
+                        .build();
+                return Response.ok()
+                        .cookie(sessionCookie)
+                        .entity("Accesso effettuato con successo.")
+                        .build();
             }
-        } else {
-            authRepository.login(utente.getEmail(), utente.getTelefono(), utente.getPassword());
-            NewCookie sessionCookie = new NewCookie.Builder("SESSION_COOKIE")
-                    .path("/")
-                    .value(String.valueOf(u.getId()))
-                    .build();
-            return Response.ok()
-                    .cookie(sessionCookie)
-                    .entity("Accesso effettuato con successo.")
-                    .build();
         }
     }
 
@@ -89,7 +103,7 @@ public class AuthResource {
     public Response verificaByPhone(@PathParam("codice") String codice, @PathParam("telefono") String telefono) {
         Response response = authRepository.verificaCodice(telefono, codice);
         if (response.getStatus() == 200) {
-            Utente u = utenteRepository.findByEmailOrPhone("", telefono);
+            Utente u = utenteRepository.findByPhone(telefono);
             authRepository.aggiornaRuolo(u.getEmail());
             return Response.ok().entity("Utente verificato con successo.").build();
         } else {

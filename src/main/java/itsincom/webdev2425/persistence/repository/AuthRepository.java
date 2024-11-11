@@ -109,7 +109,7 @@ public class AuthRepository implements PanacheRepository<Utente> {
     public Response verificaCodice(String telefono, String codice) {
         Twilio.init(twilioAccountSid, twilioAuthToken);
         VerificationCheck verificationCheck = VerificationCheck.creator("VAe40230670751d93c15ddbe73884cb46b")
-                .setTo(telefono)
+                .setTo("+39" + telefono)
                 .setCode(codice)
                 .create();
         if (verificationCheck.getStatus().equals("approved")) {
