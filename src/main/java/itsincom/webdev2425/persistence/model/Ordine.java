@@ -16,9 +16,9 @@ public class Ordine {
     private LocalDateTime data;
     private LocalDateTime data_ritiro;
     private double prezzoTotale;
-    private List<String> commenti;
+    private String commento;
 
-    public static Ordine create(String email_utente, List<DettaglioProdotto> dettaglio, LocalDateTime dataRitiro) {
+    public static Ordine create(String email_utente, List<DettaglioProdotto> dettaglio, LocalDateTime dataRitiro, String commento) {
         Ordine ordine = new Ordine();
         ordine.setEmail_utente(email_utente);
         ordine.setDettaglio(dettaglio);
@@ -26,7 +26,7 @@ public class Ordine {
         ordine.setData_ritiro(dataRitiro);
         ordine.setPrezzoTotale(calculatePrezzoTotale(dettaglio));
         ordine.setStato("IN ATTESA DI CONFERMA");
-        ordine.setCommenti(List.of());
+        ordine.setCommento(commento);
         return ordine;
     }
 
@@ -86,12 +86,12 @@ public class Ordine {
         this.prezzoTotale = prezzoTotale;
     }
 
-    public List<String> getCommenti() {
-        return commenti;
+    public String getCommento() {
+        return commento;
     }
 
-    public void setCommenti(List<String> commenti) {
-        this.commenti = commenti;
+    public void setCommento(String commento) {
+        this.commento = commento;
     }
 
     private static double calculatePrezzoTotale(List<DettaglioProdotto> dettaglio) {

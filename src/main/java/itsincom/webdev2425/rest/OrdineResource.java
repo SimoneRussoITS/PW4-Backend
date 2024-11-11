@@ -64,14 +64,14 @@ public class OrdineResource {
                     prodottiDaAggiornare.add(p);
                 }
             }
-            Ordine o = ordineRepository.addOrdine(utente.getEmail(), ordine.getDettaglio(), ordine.getData_ritiro());
+            Ordine o = ordineRepository.addOrdine(utente.getEmail(), ordine.getDettaglio(), ordine.getData_ritiro(), ordine.getCommento());
             String dataFormattata = o.getData().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
             for (Prodotto p : prodottiDaAggiornare) {
                 prodottoRepository.update(p, String.valueOf(p.getId()));
             }
             Mail mail = Mail.withHtml("simorusso04@gmail.com",
                     "Pasticceria C'est la Vie - Nuovo ordine (" + dataFormattata + ")",
-                    HtmlNuovoOrdine(utente.getEmail(), dettaglio, ordine.getData_ritiro(), o.getId().toString())
+                    HtmlNuovoOrdine(utente.getEmail(), dettaglio, ordine.getData_ritiro(), o.getId().toString(), ordine.getCommento())
             );
             Uni<Void> send = reactiveMailer.send(mail);
             send.subscribe().with(
@@ -156,7 +156,7 @@ public class OrdineResource {
 
     // private methods
 
-    private String HtmlNuovoOrdine(String emailUtente, List<DettaglioProdotto> dettaglio, LocalDateTime dataRitiro, String idOrdine) {
+    private String HtmlNuovoOrdine(String emailUtente, List<DettaglioProdotto> dettaglio, LocalDateTime dataRitiro, String idOrdine, String commento) {
         StringBuilder messaggio = new StringBuilder();
         messaggio.append("<html><body>");
         messaggio.append("<h1>Ordine</h1>");
@@ -169,6 +169,7 @@ public class OrdineResource {
         messaggio.append("</ul>");
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         messaggio.append("<p>Data ritiro: ").append(dataRitiro.format(formatter)).append("</p>");
+        messaggio.append("<p>Commento dal cliente: ").append(commento).append("</p>");
         messaggio.append("<p>Clicca <a href='http://localhost:3000/ConfermaPrenotazione?id=").append(idOrdine).append("'>qui</a> per confermare l'ordine</p>");
         messaggio.append("</body></html>");
         return messaggio.toString();
