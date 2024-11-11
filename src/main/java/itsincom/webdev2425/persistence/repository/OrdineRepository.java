@@ -30,11 +30,6 @@ public class OrdineRepository implements PanacheMongoRepository<Ordine> {
     }
 
     public Ordine addOrdine(String email_utente, List<DettaglioProdotto> dettaglio, LocalDateTime data_ritiro, String commento) {
-        if (commento == null) { // Se il commento è null, lo imposto a ""
-            commento = "";
-        } else if (commento.length() > 255) { // Il commento non può superare i 255 caratteri
-            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Il commento non può superare i 255 caratteri").build());
-        }
         List<Ordine> ordini = getOrdini();
         if (data_ritiro.getDayOfWeek().getValue() > 5 || data_ritiro.getHour() < 14 || (data_ritiro.getHour() == 18 && data_ritiro.getMinute() > 0) || data_ritiro.getHour() > 18) { // Sabato e domenica chiuso, apertura dalle 14 alle 18
             throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Non è possibile effettuare ordini nei giorni di sabato e domenica o fuori dall'orario di apertura (14-18)").build());

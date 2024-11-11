@@ -35,14 +35,21 @@ public class OrdineResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response addOrdine(Ordine ordine, @CookieParam("SESSION_COOKIE") @DefaultValue("-1") int sessionId) {
+        // controllo che l'utente sia loggato e sia un cliente verificato
         Utente utente = utenteRepository.findById(String.valueOf(sessionId));
-        // l'utente deve avere il ruolo CLIENTE VERIFICATO per poter effettuare un ordine
         if (utente == null || !utente.getRuolo().equals("CLIENTE VERIFICATO")) {
             return Response
                     .status(Response.Status.UNAUTHORIZED)
                     .entity("Accesso negato")
                     .build();
         } else {
+            // controllo che l'ordine contenga almeno un prodotto
+            if (ordine.getDettaglio().isEmpty()) {
+                return Response
+                        .status(Response.Status.BAD_REQUEST)
+                        .entity("L'ordine deve contenere almeno un prodotto")
+                        .build();
+            }
             // controllo che i prodotti siano disponibili
             List<DettaglioProdotto> dettaglio = ordine.getDettaglio();
             List<Prodotto> prodottiDaAggiornare = prodottoRepository.listAll();
@@ -64,11 +71,23 @@ public class OrdineResource {
                     prodottiDaAggiornare.add(p);
                 }
             }
+            // controllo che il commento non superi i 255 caratteri e lo setto a "" se è null
+            if (ordine.getCommento() == null) {
+                ordine.setCommento("");
+            } else if (ordine.getCommento().length() > 255) {
+                return Response
+                        .status(Response.Status.BAD_REQUEST)
+                        .entity("Il commento non può superare i 255 caratteri")
+                        .build();
+            }
+            // aggiungo l'ordine
             Ordine o = ordineRepository.addOrdine(utente.getEmail(), ordine.getDettaglio(), ordine.getData_ritiro(), ordine.getCommento());
-            String dataFormattata = o.getData().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+            // aggiorno la quantità dei prodotti
             for (Prodotto p : prodottiDaAggiornare) {
                 prodottoRepository.update(p, String.valueOf(p.getId()));
             }
+            // invio una mail al pasticcere per notificare il nuovo ordine
+            String dataFormattata = o.getData().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
             Mail mail = Mail.withHtml("simorusso04@gmail.com",
                     "Pasticceria C'est la Vie - Nuovo ordine (" + dataFormattata + ")",
                     HtmlNuovoOrdine(utente.getEmail(), dettaglio, ordine.getData_ritiro(), o.getId().toString(), ordine.getCommento())
@@ -169,7 +188,9 @@ public class OrdineResource {
         messaggio.append("</ul>");
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         messaggio.append("<p>Data ritiro: ").append(dataRitiro.format(formatter)).append("</p>");
-        messaggio.append("<p>Commento dal cliente: ").append(commento).append("</p>");
+        if (commento != null && !commento.isEmpty()) {
+            messaggio.append("<p>Commento dal cliente: ").append(commento).append("</p>");
+        }
         messaggio.append("<p>Clicca <a href='http://localhost:3000/ConfermaPrenotazione?id=").append(idOrdine).append("'>qui</a> per confermare l'ordine</p>");
         messaggio.append("</body></html>");
         return messaggio.toString();
