@@ -70,7 +70,7 @@ public class OrdineResource {
                 prodottoRepository.update(p, String.valueOf(p.getId()));
             }
             Mail mail = Mail.withHtml("simorusso04@gmail.com",
-                    "Nuovo ordine (" + dataFormattata + ")",
+                    "Pasticceria C'est la Vie - Nuovo ordine (" + dataFormattata + ")",
                     HtmlNuovoOrdine(utente.getEmail(), dettaglio, ordine.getData_ritiro(), o.getId().toString())
             );
             Uni<Void> send = reactiveMailer.send(mail);
@@ -121,7 +121,7 @@ public class OrdineResource {
         } else {
             Ordine ordineAggiornato = ordineRepository.update(ordine, id);
             Mail mail = Mail.withHtml(ordineAggiornato.getEmail_utente(),
-                    "Prenotazione confermata. Il tuo ordine è in preparazione",
+                    "Pasticceria C'est la Vie - Prenotazione confermata",
                     HtmlOrdineConfermato(ordineAggiornato.getData_ritiro())
             );
             Uni<Void> send = reactiveMailer.send(mail);
@@ -132,6 +132,24 @@ public class OrdineResource {
             return Response
                     .status(Response.Status.OK)
                     .entity("Ordine aggiornato con successo. E' stata inviata una mail all'utente in cui si conferma la prenotazione e si ricorda la data di ritiro")
+                    .build();
+        }
+    }
+
+    @GET
+    @Path("/excel/{data}")
+    public Response getExcelOrdini(@PathParam("data") String data, @CookieParam("SESSION_COOKIE") @DefaultValue("-1") int sessionId) {
+        Utente admin = utenteRepository.findById(String.valueOf(sessionId));
+        if (admin == null || !admin.getRuolo().equals("ADMIN")) {
+            return Response
+                    .status(Response.Status.UNAUTHORIZED)
+                    .entity("Accesso negato")
+                    .build();
+        } else {
+            ordineRepository.getExcelOrdini(data);
+            return Response
+                    .status(Response.Status.OK)
+                    .entity("File excel generato con successo")
                     .build();
         }
     }
@@ -166,5 +184,4 @@ public class OrdineResource {
         messaggio.append("</body></html>");
         return messaggio.toString();
     }
-
 }

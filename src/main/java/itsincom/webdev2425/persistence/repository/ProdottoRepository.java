@@ -5,10 +5,7 @@ import itsincom.webdev2425.persistence.model.Prodotto;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -44,12 +41,12 @@ public class ProdottoRepository implements PanacheRepository<Prodotto> {
 
     public Prodotto update(Prodotto prodotto, String id) {
         update("nome = ?1, " +
-               "descrizione = ?2, " +
-               "ingredienti = ?3, " +
-               "quantita = ?4, " +
-               "prezzo = ?5, " +
-               "foto = ?6 " +
-               "where id = ?7",
+                        "descrizione = ?2, " +
+                        "ingredienti = ?3, " +
+                        "quantita = ?4, " +
+                        "prezzo = ?5, " +
+                        "foto = ?6 " +
+                        "where id = ?7",
                 prodotto.getNome(),
                 prodotto.getDescrizione(),
                 prodotto.getIngredienti(),
@@ -70,25 +67,62 @@ public class ProdottoRepository implements PanacheRepository<Prodotto> {
         Workbook workbook = new HSSFWorkbook();
         Sheet sheet = workbook.createSheet("Inventario");
 
+        // Creazione degli stili
+        CellStyle headerStyle = workbook.createCellStyle();
+        Font headerFont = workbook.createFont();
+        headerFont.setBold(true);
+        headerStyle.setFont(headerFont);
+        headerStyle.setBorderBottom(BorderStyle.MEDIUM);
+        headerStyle.setBorderTop(BorderStyle.MEDIUM);
+        headerStyle.setBorderRight(BorderStyle.MEDIUM);
+        headerStyle.setBorderLeft(BorderStyle.MEDIUM);
+
+        CellStyle borderStyle = workbook.createCellStyle();
+        borderStyle.setBorderBottom(BorderStyle.THIN);
+        borderStyle.setBorderTop(BorderStyle.THIN);
+        borderStyle.setBorderRight(BorderStyle.THIN);
+        borderStyle.setBorderLeft(BorderStyle.THIN);
+
         // Creazione dell'intestazione
         Row headerRow = sheet.createRow(0);
         String[] columns = {"ID", "Nome", "Descrizione", "Ingredienti", "Quantità", "Prezzo", "Foto"};
         for (int i = 0; i < columns.length; i++) {
             Cell cell = headerRow.createCell(i);
             cell.setCellValue(columns[i]);
+            cell.setCellStyle(headerStyle);
         }
 
         // Popolamento dei dati
         int rowNum = 1;
         for (Prodotto prodotto : prodotti) {
             Row row = sheet.createRow(rowNum++);
-            row.createCell(0).setCellValue(prodotto.getId());
-            row.createCell(1).setCellValue(prodotto.getNome());
-            row.createCell(2).setCellValue(prodotto.getDescrizione());
-            row.createCell(3).setCellValue(prodotto.getIngredienti());
-            row.createCell(4).setCellValue(prodotto.getQuantita());
-            row.createCell(5).setCellValue(prodotto.getPrezzo().doubleValue());
-            row.createCell(6).setCellValue(prodotto.getFoto());
+            Cell cell = row.createCell(0);
+            cell.setCellValue(prodotto.getId());
+            cell.setCellStyle(borderStyle);
+
+            cell = row.createCell(1);
+            cell.setCellValue(prodotto.getNome());
+            cell.setCellStyle(borderStyle);
+
+            cell = row.createCell(2);
+            cell.setCellValue(prodotto.getDescrizione());
+            cell.setCellStyle(borderStyle);
+
+            cell = row.createCell(3);
+            cell.setCellValue(prodotto.getIngredienti());
+            cell.setCellStyle(borderStyle);
+
+            cell = row.createCell(4);
+            cell.setCellValue(prodotto.getQuantita());
+            cell.setCellStyle(borderStyle);
+
+            cell = row.createCell(5);
+            cell.setCellValue(prodotto.getPrezzo().doubleValue());
+            cell.setCellStyle(borderStyle);
+
+            cell = row.createCell(6);
+            cell.setCellValue(prodotto.getFoto());
+            cell.setCellStyle(borderStyle);
         }
 
         // Scrittura del file

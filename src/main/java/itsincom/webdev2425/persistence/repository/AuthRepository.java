@@ -15,6 +15,8 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import java.time.format.DateTimeFormatter;
+
 @ApplicationScoped
 @Transactional
 public class AuthRepository implements PanacheRepository<Utente> {
@@ -82,8 +84,8 @@ public class AuthRepository implements PanacheRepository<Utente> {
         if (!email.isBlank()) {
             // invio della mail con sendgrid
             Mail mail = Mail.withHtml(email,
-                    "Verifica email",
-                    "Clicca <a href='http://localhost:3000/VerificaMail?email=" + email + "'>qui</a> per verificare la tua email"
+                    "Pasticceria C'est la Vie - Verifica email",
+                    HtmlConfermaEmail(email)
             );
             Uni<Void> send = reactiveMailer.send(mail);
             send.subscribe().with(
@@ -125,7 +127,6 @@ public class AuthRepository implements PanacheRepository<Utente> {
         }
     }
 
-
     // aggiornamento del ruolo dell'utente dopo la verifica
     public void aggiornaRuolo(String email) {
         // controllo se l'utente è presente
@@ -136,6 +137,17 @@ public class AuthRepository implements PanacheRepository<Utente> {
         // aggiorno il ruolo dell'utente
         utente.setRuolo("CLIENTE VERIFICATO");
         update("ruolo = ?1 where email = ?2", utente.getRuolo(), email);
+    }
+
+    // private methods
+    private String HtmlConfermaEmail(String email) {
+        StringBuilder messaggio = new StringBuilder();
+        messaggio.append("<html><body>");
+        messaggio.append("<h1>Conferma email</h1>");
+        // http://localhost:3000/VerificaMail?email=" + email
+        messaggio.append("<p>Clicca <a href='http://localhost:3000/VerificaMail?email=").append(email).append("'>qui</a> per confermare la tua email</p>");
+        messaggio.append("</body></html>");
+        return messaggio.toString();
     }
 }
 
