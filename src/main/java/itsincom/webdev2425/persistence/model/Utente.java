@@ -1,5 +1,6 @@
 package itsincom.webdev2425.persistence.model;
 
+import io.vertx.ext.auth.impl.hash.SHA512;
 import jakarta.persistence.*;
 
 @Entity
@@ -85,7 +86,8 @@ public class Utente {
     }
 
     public static Utente create(String nome, String cognome, String email, String telefono, String password) {
-        String hash = String.valueOf(password.hashCode());
+        SHA512 algorithm = new SHA512();
+        String hash = algorithm.hash(null, password);
         Utente utente = new Utente();
         utente.setNome(nome);
         utente.setCognome(cognome);

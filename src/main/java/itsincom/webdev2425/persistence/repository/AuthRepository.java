@@ -7,6 +7,7 @@ import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.reactive.ReactiveMailer;
 import io.smallrye.mutiny.Uni;
+import io.vertx.ext.auth.impl.hash.SHA512;
 import itsincom.webdev2425.persistence.model.Utente;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
@@ -60,12 +61,17 @@ public class AuthRepository implements PanacheRepository<Utente> {
 
     // login
     public void login(String email, String telefono, String password) {
-        // controllo se l'utente è presente a seconda se ha inserito la mail o il telefono o entrambi
+        SHA512 algorithm = new SHA512();
+        String passwordToCheck = algorithm.hash(null, password);
+        if (email.isBlank() && telefono.isBlank()) {
+            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Inserire almeno un contatto").build());
+        }
+
         Utente utente = find("email = ?1 or telefono = ?2", email, telefono).firstResult();
         if (utente == null) {
             throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity("Utente non trovato").build());
         }
-        if (!utente.getPassword().equals(String.valueOf(password.hashCode()))) {
+        if (!utente.getPassword().equals(passwordToCheck)) {
             throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity("Password errata").build());
         }
     }
