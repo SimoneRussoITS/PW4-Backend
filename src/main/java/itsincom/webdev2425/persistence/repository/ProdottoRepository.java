@@ -4,7 +4,14 @@ import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import itsincom.webdev2425.persistence.model.Prodotto;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 @ApplicationScoped
@@ -56,5 +63,45 @@ public class ProdottoRepository implements PanacheRepository<Prodotto> {
     public void delete(String id) {
         Long idLong = Long.parseLong(id);
         deleteById(idLong);
+    }
+
+    public void getExcelInventario() {
+        List<Prodotto> prodotti = listAll();
+        Workbook workbook = new HSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Inventario");
+
+        // Creazione dell'intestazione
+        Row headerRow = sheet.createRow(0);
+        String[] columns = {"ID", "Nome", "Descrizione", "Ingredienti", "Quantità", "Prezzo", "Foto"};
+        for (int i = 0; i < columns.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(columns[i]);
+        }
+
+        // Popolamento dei dati
+        int rowNum = 1;
+        for (Prodotto prodotto : prodotti) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(prodotto.getId());
+            row.createCell(1).setCellValue(prodotto.getNome());
+            row.createCell(2).setCellValue(prodotto.getDescrizione());
+            row.createCell(3).setCellValue(prodotto.getIngredienti());
+            row.createCell(4).setCellValue(prodotto.getQuantita());
+            row.createCell(5).setCellValue(prodotto.getPrezzo().doubleValue());
+            row.createCell(6).setCellValue(prodotto.getFoto());
+        }
+
+        // Scrittura del file
+        try (FileOutputStream fileOut = new FileOutputStream(System.getProperty("user.home") + "/Downloads/inventario.xls")) {
+            workbook.write(fileOut);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                workbook.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

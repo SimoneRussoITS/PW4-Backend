@@ -117,4 +117,23 @@ public class ProdottoResource {
             }
         }
     }
+
+    // chiamata per generare un file excel dell'invntario del magazzino con Apache POI (solo per admin) da scaricare nella cartella Downloads del pc
+    @GET
+    @Path("/excel")
+    public Response getExcelInventario(@CookieParam("SESSION_COOKIE") @DefaultValue("-1") int sessionId) {
+        Utente utente = utenteRepository.findById(String.valueOf(sessionId));
+        if (utente == null || !utente.getRuolo().equals("ADMIN")) {
+            return Response
+                    .status(Response.Status.UNAUTHORIZED)
+                    .entity("Accesso negato")
+                    .build();
+        } else {
+            prodottoRepository.getExcelInventario();
+            return Response
+                    .status(Response.Status.OK)
+                    .entity("File excel generato con successo")
+                    .build();
+        }
+    }
 }
