@@ -31,4 +31,25 @@ public class UtenteRepository implements PanacheRepository<Utente> {
     public List<Utente> getAllUtenti() {
         return listAll();
     }
+
+    public Utente updateUtente(Utente utente, String id) {
+        update("nome = ?1, " +
+               "cognome = ?2, " +
+               "email = ?3, " +
+               "telefono = ?4, " +
+               "ruolo = ?5 " +
+               "where id = ?6",
+                utente.getNome(),
+                utente.getCognome(),
+                utente.getEmail(),
+                utente.getTelefono(),
+                utente.getRuolo(),
+                id);
+        return utente;
+    }
+
+    public void delete(String id) {
+        Long idLong = Long.parseLong(id);
+        deleteById(idLong);
+    }
 }

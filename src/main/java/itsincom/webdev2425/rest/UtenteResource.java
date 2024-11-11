@@ -23,15 +23,33 @@ public class UtenteResource {
         return utenteRepository.getAllUtenti();
     }
 
+    @GET
+    @Path("/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Utente getUtenteById(@PathParam("id") String id, @CookieParam("SESSION_COOKIE") String sessionId) {
+        if (sessionId == null) {
+            throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato, nessun utente loggato").build());
+        } else {
+            Utente admin = utenteRepository.findById(sessionId);
+            if (admin == null || !admin.getRuolo().equals("ADMIN")) {
+                throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato").build());
+            } else {
+                Utente u = utenteRepository.findById(id);
+                if (u == null) {
+                    throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Utente non trovato").build());
+                } else {
+                    return u;
+                }
+            }
+        }
+    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Utente getUtente(@CookieParam("SESSION_COOKIE") String sessionId) {
-        // se il cookie non è presente, restituisce una eccezione 401 (Unauthorized) con messaggio "Accesso negato, nessun utente loggato"
         if (sessionId == null) {
             throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato, nessun utente loggato").build());
         } else {
-            // se l'utente non è presente nel database, restituisce una eccezione 401 (Unauthorized) con messaggio "Accesso negato, utente non trovato"
             Utente utente = utenteRepository.findById(sessionId);
             if (utente == null) {
                 throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato, utente non trovato").build());
@@ -41,4 +59,69 @@ public class UtenteResource {
         }
     }
 
+    @PUT
+    @Path("/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response updateUtente(Utente utente, @CookieParam("SESSION_COOKIE") String sessionId, @PathParam("id") String id) {
+        if (sessionId == null) {
+            return Response
+                    .status(Response.Status.UNAUTHORIZED)
+                    .entity("Accesso negato, nessun utente loggato")
+                    .build();
+        } else {
+            Utente admin = utenteRepository.findById(sessionId);
+            if (admin == null || !admin.getRuolo().equals("ADMIN")) {
+                return Response
+                        .status(Response.Status.UNAUTHORIZED)
+                        .entity("Accesso negato")
+                        .build();
+            } else {
+                Utente u = utenteRepository.updateUtente(utente, id);
+                if (u == null) {
+                    return Response
+                            .status(Response.Status.BAD_REQUEST)
+                            .entity("Errore durante l'aggiornamento dell'utente")
+                            .build();
+                } else {
+                    return Response
+                            .status(Response.Status.OK)
+                            .entity("Utente aggiornato con successo")
+                            .build();
+                }
+            }
+        }
+    }
+
+    @DELETE
+    @Path("/{id}")
+    public Response deleteUtente(@PathParam("id") String id, @CookieParam("SESSION_COOKIE") String sessionId) {
+        if (sessionId == null) {
+            return Response
+                    .status(Response.Status.UNAUTHORIZED)
+                    .entity("Accesso negato, nessun utente loggato")
+                    .build();
+        } else {
+            Utente admin = utenteRepository.findById(sessionId);
+            if (admin == null || !admin.getRuolo().equals("ADMIN")) {
+                return Response
+                        .status(Response.Status.UNAUTHORIZED)
+                        .entity("Accesso negato")
+                        .build();
+            } else {
+                Utente daEliminare = utenteRepository.findById(id);
+                if (daEliminare == null) {
+                    return Response
+                            .status(Response.Status.BAD_REQUEST)
+                            .entity("Utente non trovato")
+                            .build();
+                } else {
+                    utenteRepository.delete(id);
+                    return Response
+                            .status(Response.Status.OK)
+                            .entity("Utente eliminato con successo")
+                            .build();
+                }
+            }
+        }
+    }
 }
