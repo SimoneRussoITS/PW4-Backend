@@ -46,7 +46,7 @@ public class OrdineRepository implements PanacheMongoRepository<Ordine> {
     }
 
     public List<Ordine> getStoricoOrdiniUtente(String email_utente) {
-        return list("{\n'email_utente': '?1', \n'stato': {\n'$in': [\n'RITIRATO'\n]\n}\n}", email_utente);
+        return list("{\"email_utente\": ?1, \"stato\": {\"$in\": [\"RITIRATO\"]}}", email_utente);
     }
 
     public List<Ordine> getOrdiniCorrentiUtente(String email_utente) {
