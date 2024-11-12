@@ -31,12 +31,16 @@ public class OrdineRepository implements PanacheMongoRepository<Ordine> {
 
     public Ordine addOrdine(String email_utente, List<DettaglioProdotto> dettaglio, LocalDateTime data_ritiro, String commento) {
         List<Ordine> ordini = getOrdini();
-        if (data_ritiro.getDayOfWeek().getValue() > 5 || data_ritiro.getHour() < 14 || (data_ritiro.getHour() == 18 && data_ritiro.getMinute() > 0) || data_ritiro.getHour() > 18) { // Sabato e domenica chiuso, apertura dalle 14 alle 18
-            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Non è possibile effettuare ordini nei giorni di sabato e domenica o fuori dall'orario di apertura (14-18)").build());
+        if (data_ritiro.isBefore(LocalDateTime.now())) { // Non è possibile effettuare ordini nel passato
+            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Non è possibile effettuare ordini nel passato").build());
         } else {
-            for (Ordine o : ordini) {
-                if (Math.abs(o.getData_ritiro().until(data_ritiro, ChronoUnit.MINUTES)) < 10) { // 10 minuti di attesa tra un ordine e l'altro
-                    throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Devi attendere almeno 10 minuti tra un ordine e l'altro").build());
+            if (data_ritiro.getDayOfWeek().getValue() > 5 || data_ritiro.getHour() < 14 || (data_ritiro.getHour() == 18 && data_ritiro.getMinute() > 0) || data_ritiro.getHour() > 18) { // Sabato e domenica chiuso, apertura dalle 14 alle 18
+                throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Non è possibile effettuare ordini nei giorni di sabato e domenica o fuori dall'orario di apertura (14-18)").build());
+            } else {
+                for (Ordine o : ordini) {
+                    if (Math.abs(o.getData_ritiro().until(data_ritiro, ChronoUnit.MINUTES)) < 10) { // 10 minuti di attesa tra un ordine e l'altro
+                        throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Devi attendere almeno 10 minuti tra un ordine e l'altro").build());
+                    }
                 }
             }
         }
