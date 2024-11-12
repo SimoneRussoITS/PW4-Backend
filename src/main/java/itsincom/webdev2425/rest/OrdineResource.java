@@ -106,13 +106,21 @@ public class OrdineResource {
 
     @GET
     @Path("/utente")
+    // ?storico=true per ottenere la lista degli ordini ritirati (stato = "RITIRATO")
+    // ?correnti=true per ottenere la lista degli ordini in attesa di conferma (stato = "IN ATTESA") e in preparazione (stato = "IN PREPARAZIONE")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<Ordine> getOrdiniUtente(@CookieParam("SESSION_COOKIE") @DefaultValue("-1") int sessionId) {
+    public List<Ordine> getOrdiniUtente(@CookieParam("SESSION_COOKIE") @DefaultValue("-1") int sessionId, @QueryParam("storico") @DefaultValue("false") boolean storico, @QueryParam("correnti") @DefaultValue("false") boolean correnti) {
         Utente utente = utenteRepository.findById(String.valueOf(sessionId));
         if (utente == null || !utente.getRuolo().equals("CLIENTE VERIFICATO")) {
             throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato").build());
         } else {
-            return ordineRepository.getOrdiniUtente(utente.getEmail());
+            if (storico) {
+                return ordineRepository.getStoricoOrdiniUtente(utente.getEmail());
+            } else if (correnti) {
+                return ordineRepository.getOrdiniCorrentiUtente(utente.getEmail());
+            } else {
+                throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Devi specificare almeno un parametro tra storico e correnti").build());
+            }
         }
     }
 
