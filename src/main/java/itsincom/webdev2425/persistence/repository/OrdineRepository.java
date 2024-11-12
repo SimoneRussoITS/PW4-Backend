@@ -54,8 +54,7 @@ public class OrdineRepository implements PanacheMongoRepository<Ordine> {
     }
 
     public List<Ordine> getOrdiniCorrentiUtente(String email_utente) {
-        return list("{\n'email_utente': 'luke.difini@gmail.com', \n'stato': {\n'$in': [\n'IN ATTESA DI CONFERMA', 'IN PREPARAZIONE'\n]\n}\n}",
-                email_utente);
+        return list("{\"email_utente\": ?1, \"stato\": {\"$in\": [\"IN ATTESA DI CONFERMA\", \"IN PREPARAZIONE\"]}}", email_utente);
     }
 
     public Ordine update(Ordine ordine, String id) {

@@ -128,7 +128,7 @@ public class OrdineResource {
     @Produces(MediaType.APPLICATION_JSON)
     public List<Ordine> getOrdini(@CookieParam("SESSION_COOKIE") @DefaultValue("-1") int sessionId) {
         Utente utente = utenteRepository.findById(String.valueOf(sessionId));
-        if (utente == null || !utente.getRuolo().equals("ADMIN")) {
+        if (utente == null || !utente.getRuolo().equals("ADMIN") && !utente.getRuolo().equals("CLIENTE VERIFICATO")) {
             throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato").build());
         } else {
             return ordineRepository.getOrdini();
