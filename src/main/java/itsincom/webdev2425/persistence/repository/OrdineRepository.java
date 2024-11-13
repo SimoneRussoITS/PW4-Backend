@@ -1,5 +1,6 @@
 package itsincom.webdev2425.persistence.repository;
 
+import com.mongodb.client.MongoCollection;
 import io.quarkus.mongodb.panache.PanacheMongoRepository;
 import io.quarkus.panache.common.Sort;
 import itsincom.webdev2425.persistence.model.DettaglioProdotto;
@@ -9,13 +10,16 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
+import org.bson.Document;
 import org.bson.types.ObjectId;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -52,11 +56,39 @@ public class OrdineRepository implements PanacheMongoRepository<Ordine> {
     }
 
     public List<Ordine> getStoricoOrdiniUtente(String email_utente) {
-        return list("{\"email_utente\": ?1, \"stato\": {\"$in\": [\"RITIRATO\"]}}", email_utente);
+        List<Ordine> ordini = new ArrayList<>();
+        MongoCollection<Document> collection = this.mongoDatabase().getCollection("ordine");
+        collection.aggregate(
+                List.of(
+                        new Document("$match",
+                                new Document("email_utente", email_utente)
+                                        .append("stato",
+                                                new Document("$in", List.of("RITIRATO")))),
+                        new Document("$sort",
+                                new Document("data_ritiro", -1L))
+                )
+        ).forEach(document -> {
+            addOrderFromDocument(document, ordini);
+        });
+        return ordini;
     }
 
     public List<Ordine> getOrdiniCorrentiUtente(String email_utente) {
-        return list("{\"email_utente\": ?1, \"stato\": {\"$in\": [\"IN ATTESA DI CONFERMA\", \"IN PREPARAZIONE\"]}}", email_utente);
+        List<Ordine> ordini = new ArrayList<>();
+        MongoCollection<Document> collection = this.mongoDatabase().getCollection("ordine");
+        collection.aggregate(
+                List.of(
+                        new Document("$match",
+                                new Document("email_utente", email_utente)
+                                        .append("stato",
+                                                new Document("$in", List.of("IN ATTESA DI CONFERMA", "IN PREPARAZIONE")))),
+                        new Document("$sort",
+                                new Document("data_ritiro", -1L))
+                )
+        ).forEach(document -> {
+            addOrderFromDocument(document, ordini);
+        });
+        return ordini;
     }
 
     public Ordine update(Ordine ordine, String id) {
@@ -175,5 +207,23 @@ public class OrdineRepository implements PanacheMongoRepository<Ordine> {
                 e.printStackTrace();
             }
         }
+    }
+
+    // private methods
+    private void addOrderFromDocument(Document document, List<Ordine> ordini) {
+        Ordine ordine = new Ordine();
+        ordine.setId(document.getObjectId("_id"));
+        ordine.setEmail_utente(document.getString("email_utente"));
+        ordine.setData(document.getDate("data").toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
+        ordine.setData_ritiro(document.getDate("data_ritiro").toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
+        ordine.setStato(document.getString("stato"));
+        ordine.setDettaglio(document.getList("dettaglio", Document.class).stream().map(d -> {
+            DettaglioProdotto dettaglioProdotto = new DettaglioProdotto();
+            dettaglioProdotto.setNome(d.getString("nome"));
+            dettaglioProdotto.setQuantita(d.getInteger("quantita"));
+            return dettaglioProdotto;
+        }).toList());
+        ordine.setPrezzoTotale(document.getDouble("prezzoTotale"));
+        ordini.add(ordine);
     }
 }
