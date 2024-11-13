@@ -1,6 +1,7 @@
 package itsincom.webdev2425.persistence.repository;
 
 import io.quarkus.mongodb.panache.PanacheMongoRepository;
+import io.quarkus.panache.common.Sort;
 import itsincom.webdev2425.persistence.model.DettaglioProdotto;
 import itsincom.webdev2425.persistence.model.Ordine;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -21,7 +22,8 @@ import java.util.List;
 @ApplicationScoped
 public class OrdineRepository implements PanacheMongoRepository<Ordine> {
     public List<Ordine> getOrdini() {
-        return listAll();
+        // dal più recente al più vecchio
+        return listAll(Sort.by("data").descending());
     }
 
     public Ordine getById(String id) {
