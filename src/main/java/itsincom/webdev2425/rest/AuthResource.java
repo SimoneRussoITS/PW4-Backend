@@ -18,11 +18,14 @@ public class AuthResource {
         this.utenteRepository = utenteRepository;
     }
 
-    // register
     @POST
     @Path("/register")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response register(Utente utente) {
+        // controllo se i campi sono vuoti
+        checkRegisterFields(utente.getNome(), utente.getCognome(), utente.getEmail(), utente.getTelefono(), utente.getPassword());
+
+        // a seconda dei campi inseriti, invio una mail o un messaggio per la verifica e registro l'utente nel db
         String mail = utente.getEmail();
         String telefono = utente.getTelefono();
         if (!mail.isBlank() && !telefono.isBlank()) {
@@ -42,17 +45,18 @@ public class AuthResource {
         }
     }
 
-    // login
     @POST
     @Path("/login")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response login(Utente utente) {
-        if (utente.getEmail() == null && utente.getTelefono() == null) {
+        // controllo se i campi sono vuoti
+        if ((utente.getEmail() == null || utente.getEmail().isBlank()) && (utente.getTelefono() == null || utente.getTelefono().isBlank())) {
             return Response.status(Response.Status.UNAUTHORIZED).entity("Inserire almeno un contatto.").build();
         } else {
             if (utente.getPassword().isBlank()) {
-                return Response.status(Response.Status.UNAUTHORIZED).entity("Inserire la password.").build();
+                return Response.status(Response.Status.UNAUTHORIZED).entity("Campo 'password' obbligatorio").build();
             }
+            // controllo se l'utente è presente nel db e se la password è corretta
             Utente u;
             if (utente.getEmail() != null) {
                 u = utenteRepository.findByEmail(utente.getEmail());
@@ -62,7 +66,9 @@ public class AuthResource {
             if (u == null) {
                 return Response.status(Response.Status.UNAUTHORIZED).entity("Utente non trovato.").build();
             }
+            // controllo del ruolo dell'utente
             if (u.getRuolo().equals("CLIENTE NON VERIFICATO")) {
+                // se l'utente non è verificato, invio una mail o un messaggio per la verifica
                 if (!u.getEmail().isBlank() && !u.getTelefono().isBlank()) {
                     authRepository.inviaMail(utente.getEmail());
                 } else {
@@ -74,6 +80,7 @@ public class AuthResource {
                     }
                 }
                 return Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato, verifica la tua email prima di accedere. Ti abbiamo inviato una mail con il link di conferma.").build();
+                // se l'utente è verificato, effettuo il login e imposto il cookie di sessione
             } else {
                 authRepository.login(utente.getEmail(), utente.getTelefono(), utente.getPassword());
                 NewCookie sessionCookie = new NewCookie.Builder("SESSION_COOKIE")
@@ -112,7 +119,6 @@ public class AuthResource {
 
     }
 
-    // logout
     @DELETE
     @Path("/logout")
     public Response logout(@CookieParam("SESSION_COOKIE") int sessionId) {
@@ -131,4 +137,29 @@ public class AuthResource {
         }
     }
 
+    // private methods
+
+    private void checkRegisterFields(String nome, String cognome, String email, String telefono, String password) {
+        telefono = "+39" + telefono;
+        // imposto un messaggio di errore per ogni campo vuoto
+        if (nome == null || nome.isBlank()) {
+            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Campo 'nome' obbligatorio").build());
+        }
+        if (cognome == null || cognome.isBlank()) {
+            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Campo 'cognome' obbligatorio").build());
+        }
+        // l'utente può registrarsi o con la mail o con il telefono o con entrambi
+        if (email == null || email.isBlank()) {
+            email = "";
+        }
+        if (telefono.equals("+39")) {
+            telefono = "";
+        }
+        if (email.isBlank() && telefono.isBlank()) {
+            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Inserire almeno un contatto").build());
+        }
+        if (password == null || password.isBlank()) {
+            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Campo 'password' obbligatorio").build());
+        }
+    }
 }
