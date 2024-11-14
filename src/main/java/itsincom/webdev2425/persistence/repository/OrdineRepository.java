@@ -40,8 +40,9 @@ public class OrdineRepository implements PanacheMongoRepository<Ordine> {
         if (data_ritiro.isBefore(LocalDateTime.now())) { // Non è possibile effettuare ordini nel passato
             throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Non è possibile effettuare ordini nel passato").build());
         } else {
-            if (data_ritiro.getDayOfWeek().getValue() > 5 || data_ritiro.getHour() < 14 || (data_ritiro.getHour() == 18 && data_ritiro.getMinute() > 0) || data_ritiro.getHour() > 18) { // Sabato e domenica chiuso, apertura dalle 14 alle 18
-                throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Non è possibile effettuare ordini nei giorni di sabato e domenica o fuori dall'orario di apertura (14-18)").build());
+            boolean isClosed = isClosed(data_ritiro);
+            if (isClosed) {
+                throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Non è possibile effettuare ordini fuori dall'orario di apertura").build());
             } else {
                 for (Ordine o : ordini) {
                     if (Math.abs(o.getData_ritiro().until(data_ritiro, ChronoUnit.MINUTES)) < 10) { // 10 minuti di attesa tra un ordine e l'altro
@@ -53,6 +54,18 @@ public class OrdineRepository implements PanacheMongoRepository<Ordine> {
         Ordine ordine = Ordine.create(email_utente, dettaglio, data_ritiro, commento);
         persist(ordine);
         return ordine;
+    }
+
+    private boolean isClosed(LocalDateTime data_ritiro) {
+        int dayOfWeek = data_ritiro.getDayOfWeek().getValue();
+        int hour = data_ritiro.getHour();
+        int minute = data_ritiro.getMinute();
+
+        boolean isClosed = (dayOfWeek == 1) || // Lunedì chiuso
+                           (dayOfWeek == 7 && (hour < 8 || (hour == 12 && minute > 30) || hour > 12)) || // Domenica 8:00-12:30
+                           (dayOfWeek >= 2 && dayOfWeek <= 6 && // Martedì-Sabato 7:30-13:00 e 14:30-17:00
+                            ((hour < 7 || (hour == 7 && minute < 30)) || (hour == 13 && minute > 0) || (hour > 13 && hour < 14) || (hour == 14 && minute < 30) || hour > 17 || (hour == 17 && minute > 0)));
+        return isClosed;
     }
 
     public List<Ordine> getStoricoOrdiniUtente(String email_utente) {

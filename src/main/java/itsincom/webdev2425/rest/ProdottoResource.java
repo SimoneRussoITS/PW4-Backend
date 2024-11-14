@@ -44,6 +44,7 @@ public class ProdottoResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response addProdotto(Prodotto prodotto, @CookieParam("SESSION_COOKIE") @DefaultValue("-1") int sessionId) {
+        // controllo se l'utente è un admin
         Utente utente = utenteRepository.findById(String.valueOf(sessionId));
         if (utente == null || !utente.getRuolo().equals("ADMIN")) {
             return Response
@@ -51,6 +52,9 @@ public class ProdottoResource {
                     .entity("Accesso negato")
                     .build();
         } else {
+            // controllo se i campi obbligatori sono stati inseriti
+            checkFields(prodotto);
+            // aggiungo il prodotto
             Prodotto p = prodottoRepository.add(prodotto);
             if (p == null) {
                 return Response
@@ -70,6 +74,7 @@ public class ProdottoResource {
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response updateProdotto(Prodotto prodotto, @PathParam("id") String id, @CookieParam("SESSION_COOKIE") @DefaultValue("-1") int sessionId) {
+        // controllo se l'utente è un admin
         Utente utente = utenteRepository.findById(String.valueOf(sessionId));
         if (utente == null || !utente.getRuolo().equals("ADMIN")) {
             return Response
@@ -77,6 +82,9 @@ public class ProdottoResource {
                     .entity("Accesso negato")
                     .build();
         } else {
+            // controllo se i campi obbligatori sono stati inseriti
+            checkFields(prodotto);
+            // aggiorno il prodotto
             Prodotto p = prodottoRepository.update(prodotto, id);
             if (p == null) {
                 return Response
@@ -95,6 +103,7 @@ public class ProdottoResource {
     @DELETE
     @Path("/{id}")
     public Response deleteProdotto(@PathParam("id") String id, @CookieParam("SESSION_COOKIE") @DefaultValue("-1") int sessionId) {
+        // controllo se l'utente è un admin
         Utente utente = utenteRepository.findById(String.valueOf(sessionId));
         if (utente == null || !utente.getRuolo().equals("ADMIN")) {
             return Response
@@ -118,7 +127,6 @@ public class ProdottoResource {
         }
     }
 
-    // chiamata per generare un file excel dell'invntario del magazzino con Apache POI (solo per admin) da scaricare nella cartella Downloads del pc
     @GET
     @Path("/excel")
     public Response getExcelInventario(@CookieParam("SESSION_COOKIE") @DefaultValue("-1") int sessionId) {
@@ -134,6 +142,30 @@ public class ProdottoResource {
                     .status(Response.Status.OK)
                     .entity("File excel generato con successo")
                     .build();
+        }
+    }
+
+    // private methods
+
+    private void checkFields(Prodotto prodotto) {
+        // imposta un messaggio di errore diverso per ogni campo vuoto
+        if (prodotto.getNome() == null || prodotto.getNome().isEmpty()) {
+            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Nome non inserito").build());
+        }
+        if (prodotto.getDescrizione() == null || prodotto.getDescrizione().isEmpty()) {
+            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Descrizione non inserita").build());
+        }
+        if (prodotto.getIngredienti() == null || prodotto.getIngredienti().isEmpty()) {
+            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Ingredienti non inseriti").build());
+        }
+        if (prodotto.getQuantita() == null) {
+            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Quantità non inserita").build());
+        }
+        if (prodotto.getPrezzo() == null) {
+            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Prezzo non inserito").build());
+        }
+        if (prodotto.getFoto() == null || prodotto.getFoto().isEmpty()) {
+            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Foto non inserita").build());
         }
     }
 }

@@ -36,8 +36,6 @@ public class ProdottoRepository implements PanacheRepository<Prodotto> {
     }
 
     public Prodotto add(Prodotto prodotto) {
-        // controllo se i campi sono vuoti
-        checkFields(prodotto);
         // creo il nuovo prodotto
         Prodotto newProdotto = Prodotto.create(prodotto.getNome(), prodotto.getDescrizione(), prodotto.getIngredienti(), prodotto.getQuantita(), prodotto.getPrezzo(), prodotto.getFoto());
         // aggiungo il prodotto al database
@@ -46,8 +44,6 @@ public class ProdottoRepository implements PanacheRepository<Prodotto> {
     }
 
     public Prodotto update(Prodotto prodotto, String id) {
-        // controllo se i campi sono vuoti
-        checkFields(prodotto);
         // aggiorno il prodotto
         update("nome = ?1, " +
                "descrizione = ?2, " +
@@ -145,30 +141,6 @@ public class ProdottoRepository implements PanacheRepository<Prodotto> {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    // private methods
-
-    private void checkFields(Prodotto prodotto) {
-        // imposta un messaggio di errore diverso per ogni campo vuoto
-        if (prodotto.getNome() == null || prodotto.getNome().isEmpty()) {
-            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Nome non inserito").build());
-        }
-        if (prodotto.getDescrizione() == null || prodotto.getDescrizione().isEmpty()) {
-            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Descrizione non inserita").build());
-        }
-        if (prodotto.getIngredienti() == null || prodotto.getIngredienti().isEmpty()) {
-            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Ingredienti non inseriti").build());
-        }
-        if (prodotto.getQuantita() == null) {
-            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Quantità non inserita").build());
-        }
-        if (prodotto.getPrezzo() == null) {
-            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Prezzo non inserito").build());
-        }
-        if (prodotto.getFoto() == null || prodotto.getFoto().isEmpty()) {
-            throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Foto non inserita").build());
         }
     }
 }
