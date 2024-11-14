@@ -69,6 +69,8 @@ public class ProdottoRepository implements PanacheRepository<Prodotto> {
 
     public void getExcelInventario() {
         List<Prodotto> prodotti = listAll();
+
+        // Creazione del foglio di excel
         Workbook workbook = new HSSFWorkbook();
         Sheet sheet = workbook.createSheet("Inventario");
 

@@ -23,7 +23,7 @@ public class ProdottoResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public List<Prodotto> getProdotti(@QueryParam("search") String search, @CookieParam("SESSION_COOKIE") @DefaultValue("-1") int sessionId) {
-        Utente utente = utenteRepository.findById(String.valueOf(sessionId));
+        Utente utente = utenteRepository.findById(String.valueOf(sessionId)); // controllo se l'utente è un admin o un cliente verificato
         if (utente == null || !utente.getRuolo().equals("ADMIN") && !utente.getRuolo().equals("CLIENTE VERIFICATO")) {
             throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato").build());
         }
@@ -34,7 +34,7 @@ public class ProdottoResource {
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Prodotto getProdotto(@PathParam("id") String id, @CookieParam("SESSION_COOKIE") @DefaultValue("-1") int sessionId) {
-        Utente utente = utenteRepository.findById(String.valueOf(sessionId));
+        Utente utente = utenteRepository.findById(String.valueOf(sessionId)); // controllo se l'utente è un admin o un cliente verificato
         if (utente == null || !utente.getRuolo().equals("ADMIN") && !utente.getRuolo().equals("CLIENTE VERIFICATO")) {
             throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato").build());
         }
@@ -111,6 +111,7 @@ public class ProdottoResource {
                     .entity("Accesso negato")
                     .build();
         } else {
+            // controllo se il prodotto esiste
             Prodotto p = prodottoRepository.getById(id);
             if (p == null) {
                 return Response
@@ -118,6 +119,7 @@ public class ProdottoResource {
                         .entity("Il prodotto specificato non esiste")
                         .build();
             } else {
+                // elimino il prodotto
                 prodottoRepository.delete(id);
                 return Response
                         .status(Response.Status.OK)
@@ -130,13 +132,14 @@ public class ProdottoResource {
     @GET
     @Path("/excel")
     public Response getExcelInventario(@CookieParam("SESSION_COOKIE") @DefaultValue("-1") int sessionId) {
-        Utente utente = utenteRepository.findById(String.valueOf(sessionId));
+        Utente utente = utenteRepository.findById(String.valueOf(sessionId)); // controllo se l'utente è un admin
         if (utente == null || !utente.getRuolo().equals("ADMIN")) {
             return Response
                     .status(Response.Status.UNAUTHORIZED)
                     .entity("Accesso negato")
                     .build();
         } else {
+            // genero il file excel
             prodottoRepository.getExcelInventario();
             return Response
                     .status(Response.Status.OK)

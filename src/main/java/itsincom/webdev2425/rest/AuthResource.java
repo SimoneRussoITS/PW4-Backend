@@ -80,8 +80,8 @@ public class AuthResource {
                     }
                 }
                 return Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato, verifica la tua email prima di accedere. Ti abbiamo inviato una mail con il link di conferma.").build();
-                // se l'utente è verificato, effettuo il login e imposto il cookie di sessione
             } else {
+                // se l'utente è verificato, effettuo il login e imposto il cookie di sessione
                 authRepository.login(utente.getEmail(), utente.getTelefono(), utente.getPassword());
                 NewCookie sessionCookie = new NewCookie.Builder("SESSION_COOKIE")
                         .path("/")
@@ -109,11 +109,11 @@ public class AuthResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response verificaByPhone(@PathParam("codice") String codice, @PathParam("telefono") String telefono) {
         Response response = authRepository.verificaCodice(telefono, codice);
-        if (response.getStatus() == 200) {
+        if (response.getStatus() == 200) { // se il codice è corretto, aggiorno il ruolo dell'utente
             Utente u = utenteRepository.findByPhone(telefono);
             authRepository.aggiornaRuolo(u.getEmail());
             return Response.ok().entity("Utente verificato con successo.").build();
-        } else {
+        } else { // se il codice non è corretto, restituisco un messaggio di errore
             return Response.status(Response.Status.UNAUTHORIZED).entity("Codice non verificato.").build();
         }
 

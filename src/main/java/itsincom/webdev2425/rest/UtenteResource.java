@@ -30,10 +30,12 @@ public class UtenteResource {
         if (sessionId == null) {
             throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato, nessun utente loggato").build());
         } else {
+            // controllo che l'utente loggato sia un admin
             Utente admin = utenteRepository.findById(sessionId);
             if (admin == null || !admin.getRuolo().equals("ADMIN")) {
                 throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato").build());
             } else {
+                // controllo che l'utente da cercare esista
                 Utente u = utenteRepository.findById(id);
                 if (u == null) {
                     throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Utente non trovato").build());
@@ -50,6 +52,7 @@ public class UtenteResource {
         if (sessionId == null) {
             throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato, nessun utente loggato").build());
         } else {
+            // controllo che l'utente loggato esista
             Utente utente = utenteRepository.findById(sessionId);
             if (utente == null) {
                 throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato, utente non trovato").build());
@@ -69,13 +72,14 @@ public class UtenteResource {
                     .entity("Accesso negato, nessun utente loggato")
                     .build();
         } else {
-            Utente admin = utenteRepository.findById(sessionId);
+            Utente admin = utenteRepository.findById(sessionId); // controllo che l'utente loggato sia un admin
             if (admin == null || !admin.getRuolo().equals("ADMIN")) {
                 return Response
                         .status(Response.Status.UNAUTHORIZED)
                         .entity("Accesso negato")
                         .build();
             } else {
+                // aggiorno l'utente
                 Utente u = utenteRepository.updateUtente(utente, id);
                 if (u == null) {
                     return Response
@@ -101,13 +105,14 @@ public class UtenteResource {
                     .entity("Accesso negato, nessun utente loggato")
                     .build();
         } else {
-            Utente admin = utenteRepository.findById(sessionId);
+            Utente admin = utenteRepository.findById(sessionId); // controllo che l'utente loggato sia un admin
             if (admin == null || !admin.getRuolo().equals("ADMIN")) {
                 return Response
                         .status(Response.Status.UNAUTHORIZED)
                         .entity("Accesso negato")
                         .build();
             } else {
+                // controllo che l'utente da eliminare esista
                 Utente daEliminare = utenteRepository.findById(id);
                 if (daEliminare == null) {
                     return Response
@@ -115,6 +120,7 @@ public class UtenteResource {
                             .entity("Utente non trovato")
                             .build();
                 } else {
+                    // elimino l'utente
                     utenteRepository.delete(id);
                     return Response
                             .status(Response.Status.OK)

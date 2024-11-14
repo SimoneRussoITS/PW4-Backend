@@ -127,7 +127,7 @@ public class OrdineResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public List<Ordine> getOrdini(@CookieParam("SESSION_COOKIE") @DefaultValue("-1") int sessionId) {
-        Utente utente = utenteRepository.findById(String.valueOf(sessionId));
+        Utente utente = utenteRepository.findById(String.valueOf(sessionId)); // controllo che l'utente sia loggato e sia un admin o un cliente verificato
         if (utente == null || !utente.getRuolo().equals("ADMIN") && !utente.getRuolo().equals("CLIENTE VERIFICATO")) {
             throw new WebApplicationException(Response.status(Response.Status.UNAUTHORIZED).entity("Accesso negato").build());
         } else {
@@ -139,14 +139,16 @@ public class OrdineResource {
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response updateOrdine(@PathParam("id") String id, Ordine ordine, @CookieParam("SESSION_COOKIE") @DefaultValue("-1") int sessionId) {
-        Utente utente = utenteRepository.findById(String.valueOf(sessionId));
+        Utente utente = utenteRepository.findById(String.valueOf(sessionId)); // controllo che l'utente sia loggato e sia un admin
         if (utente == null || !utente.getRuolo().equals("ADMIN")) {
             return Response
                     .status(Response.Status.UNAUTHORIZED)
                     .entity("Accesso negato")
                     .build();
         } else {
+            // aggiorno l'ordine
             Ordine ordineAggiornato = ordineRepository.update(ordine, id);
+            // invio una mail all'utente per confermare la prenotazione e ricordare la data di ritiro
             Mail mail = Mail.withHtml(ordineAggiornato.getEmail_utente(),
                     "Pasticceria C'est la Vie - Prenotazione confermata",
                     HtmlOrdineConfermato(ordineAggiornato.getData_ritiro())
@@ -166,14 +168,14 @@ public class OrdineResource {
     @GET
     @Path("/excel/{data}")
     public Response getExcelOrdini(@PathParam("data") String data, @CookieParam("SESSION_COOKIE") @DefaultValue("-1") int sessionId) {
-        Utente admin = utenteRepository.findById(String.valueOf(sessionId));
+        Utente admin = utenteRepository.findById(String.valueOf(sessionId)); // controllo che l'utente sia loggato e sia un admin
         if (admin == null || !admin.getRuolo().equals("ADMIN")) {
             return Response
                     .status(Response.Status.UNAUTHORIZED)
                     .entity("Accesso negato")
                     .build();
         } else {
-            ordineRepository.getExcelOrdini(data);
+            ordineRepository.getExcelOrdini(data); // genero il file excel
             return Response
                     .status(Response.Status.OK)
                     .entity("File excel generato con successo")

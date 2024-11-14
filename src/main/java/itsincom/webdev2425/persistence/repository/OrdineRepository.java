@@ -20,13 +20,11 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @ApplicationScoped
 public class OrdineRepository implements PanacheMongoRepository<Ordine> {
     public List<Ordine> getOrdini() {
-        // dal più recente al più vecchio
         return listAll(Sort.by("data").descending());
     }
 
@@ -40,36 +38,27 @@ public class OrdineRepository implements PanacheMongoRepository<Ordine> {
         if (data_ritiro.isBefore(LocalDateTime.now())) { // Non è possibile effettuare ordini nel passato
             throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Non è possibile effettuare ordini nel passato").build());
         } else {
-            boolean isClosed = isClosed(data_ritiro);
-            if (isClosed) {
+            boolean isClosed = isClosed(data_ritiro); // Controllo se il negozio è chiuso
+            if (isClosed) { // Non è possibile effettuare ordini fuori dall'orario di apertura
                 throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Non è possibile effettuare ordini fuori dall'orario di apertura").build());
             } else {
-                for (Ordine o : ordini) {
+                for (Ordine o : ordini) { // Controllo se esiste già un ordine con la stessa data di ritiro
                     if (Math.abs(o.getData_ritiro().until(data_ritiro, ChronoUnit.MINUTES)) < 10) { // 10 minuti di attesa tra un ordine e l'altro
                         throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST).entity("Devi attendere almeno 10 minuti tra un ordine e l'altro").build());
                     }
                 }
             }
         }
+        // Creazione dell'ordine
         Ordine ordine = Ordine.create(email_utente, dettaglio, data_ritiro, commento);
         persist(ordine);
         return ordine;
     }
 
-    private boolean isClosed(LocalDateTime data_ritiro) {
-        int dayOfWeek = data_ritiro.getDayOfWeek().getValue();
-        int hour = data_ritiro.getHour();
-        int minute = data_ritiro.getMinute();
-
-        boolean isClosed = (dayOfWeek == 1) || // Lunedì chiuso
-                           (dayOfWeek == 7 && (hour < 8 || (hour == 12 && minute > 30) || hour > 12)) || // Domenica 8:00-12:30
-                           (dayOfWeek >= 2 && dayOfWeek <= 6 && // Martedì-Sabato 7:30-13:00 e 14:30-17:00
-                            ((hour < 7 || (hour == 7 && minute < 30)) || (hour == 13 && minute > 0) || (hour > 13 && hour < 14) || (hour == 14 && minute < 30) || hour > 17 || (hour == 17 && minute > 0)));
-        return isClosed;
-    }
-
     public List<Ordine> getStoricoOrdiniUtente(String email_utente) {
         List<Ordine> ordini = new ArrayList<>();
+
+        // Recupero tutti gli ordini ritirati dell'utente usando le aggregations
         MongoCollection<Document> collection = this.mongoDatabase().getCollection("ordine");
         collection.aggregate(
                 List.of(
@@ -80,14 +69,14 @@ public class OrdineRepository implements PanacheMongoRepository<Ordine> {
                         new Document("$sort",
                                 new Document("data_ritiro", -1L))
                 )
-        ).forEach(document -> {
-            addOrderFromDocument(document, ordini);
-        });
+        ).forEach(document -> addOrderFromDocument(document, ordini)); // Aggiungo gli ordini alla lista
         return ordini;
     }
 
     public List<Ordine> getOrdiniCorrentiUtente(String email_utente) {
         List<Ordine> ordini = new ArrayList<>();
+
+        // Recupero tutti gli ordini in attesa di conferma o in preparazione dell'utente usando le aggregations
         MongoCollection<Document> collection = this.mongoDatabase().getCollection("ordine");
         collection.aggregate(
                 List.of(
@@ -98,9 +87,7 @@ public class OrdineRepository implements PanacheMongoRepository<Ordine> {
                         new Document("$sort",
                                 new Document("data_ritiro", -1L))
                 )
-        ).forEach(document -> {
-            addOrderFromDocument(document, ordini);
-        });
+        ).forEach(document -> addOrderFromDocument(document, ordini)); // Aggiungo gli ordini alla lista
         return ordini;
     }
 
@@ -115,7 +102,11 @@ public class OrdineRepository implements PanacheMongoRepository<Ordine> {
         LocalDate dataRitiro = LocalDate.parse(data);
         LocalDateTime startOfDay = dataRitiro.atStartOfDay();
         LocalDateTime endOfDay = dataRitiro.plusDays(1).atStartOfDay();
+
+        // Recupero tutti gli ordini del giorno specificato
         List<Ordine> ordini = list("{\"data_ritiro\": {\"$gte\": ?1, \"$lt\": ?2}}", startOfDay, endOfDay);
+
+        // Creazione del foglio di excel
         Workbook workbook = new HSSFWorkbook();
         Sheet sheet = workbook.createSheet("Ordini");
 
@@ -238,5 +229,17 @@ public class OrdineRepository implements PanacheMongoRepository<Ordine> {
         }).toList());
         ordine.setPrezzoTotale(document.getDouble("prezzoTotale"));
         ordini.add(ordine);
+    }
+
+    private boolean isClosed(LocalDateTime data_ritiro) {
+        int dayOfWeek = data_ritiro.getDayOfWeek().getValue();
+        int hour = data_ritiro.getHour();
+        int minute = data_ritiro.getMinute();
+
+        boolean isClosed = (dayOfWeek == 1) || // Lunedì chiuso
+                           (dayOfWeek == 7 && (hour < 8 || (hour == 12 && minute > 30) || hour > 12)) || // Domenica 8:00-12:30
+                           (dayOfWeek >= 2 && dayOfWeek <= 6 && // Martedì-Sabato 7:30-13:00 e 14:30-17:00
+                            ((hour < 7 || (hour == 7 && minute < 30)) || (hour == 13 && minute > 0) || (hour > 13 && hour < 14) || (hour == 14 && minute < 30) || hour > 17 || (hour == 17 && minute > 0)));
+        return isClosed;
     }
 }
