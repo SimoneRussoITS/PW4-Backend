@@ -115,7 +115,7 @@ public class OrdineRepository implements PanacheMongoRepository<Ordine> {
         LocalDate dataRitiro = LocalDate.parse(data);
         LocalDateTime startOfDay = dataRitiro.atStartOfDay();
         LocalDateTime endOfDay = dataRitiro.plusDays(1).atStartOfDay();
-        List<Ordine> ordini = list("data_ritiro >= ?1 and data_ritiro < ?2", startOfDay, endOfDay);
+        List<Ordine> ordini = list("{\"data_ritiro\": {\"$gte\": ?1, \"$lt\": ?2}}", startOfDay, endOfDay);
         Workbook workbook = new HSSFWorkbook();
         Sheet sheet = workbook.createSheet("Ordini");
 
